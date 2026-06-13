@@ -7,5 +7,5 @@
     "types": ["react", "react-native"],
     "noEmit": true
   },
-  "include": ["src/**/*", "app/**/*", "App.tsx"]
+  "include": ["src/**/*", "app/**/*"]
 }
