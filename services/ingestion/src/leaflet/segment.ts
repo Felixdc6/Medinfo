@@ -8,59 +8,84 @@ export interface RawSection {
 }
 
 /**
- * Belgian patient leaflets (PIL) follow a fixed 6-heading template. We locate
- * those headings (numbered, in NL or FR) and slice the text between them, mapping
- * each onto a canonical section key. Anything before heading 1 is dropped (cover
- * boilerplate); unmatched tails fall into `other`.
+ * Belgian patient leaflets (PIL) follow a fixed 6-section template whose headings
+ * are numbered 1.–6. The headings appear twice: once in a table of contents near
+ * the top, then again as the real section headers. We therefore:
+ *   - only treat a line as a heading if it STARTS with the expected section number,
+ *     which excludes body cross-references ("zie rubriek 4", "déclarer les effets…");
+ *   - match the heading text accent/apostrophe/case-insensitively, because the real
+ *     FR headers are upper-cased and accent-stripped (e.g. "UTILISE", "CONNAITRE");
+ *   - keep the LAST numbered occurrence of each section, i.e. the real header, not
+ *     the table-of-contents entry.
  */
-const HEADINGS: Record<SourceLanguage, { key: LeafletSectionKey; pattern: RegExp }[]> = {
+interface SectionSpec {
+  number: number;
+  key: LeafletSectionKey;
+  /** Any of these normalized substrings identifies the heading. */
+  anchors: string[];
+}
+
+const SPECS: Record<SourceLanguage, SectionSpec[]> = {
   nl: [
-    { key: 'what_is_it', pattern: /wat is .+ en waarvoor wordt het gebruikt/i },
-    { key: 'before_use', pattern: /wanneer mag u .+ niet (innemen|gebruiken)|voorzichtig/i },
-    { key: 'how_to_use', pattern: /hoe (gebruikt|neemt) u .+/i },
-    { key: 'side_effects', pattern: /mogelijke bijwerkingen/i },
-    { key: 'storage', pattern: /hoe bewaart u .+/i },
-    { key: 'composition', pattern: /inhoud van de verpakking en overige informatie/i },
+    { number: 1, key: 'what_is_it', anchors: ['waarvoor wordt', 'wat is'] },
+    { number: 2, key: 'before_use', anchors: ['wanneer mag u'] },
+    { number: 3, key: 'how_to_use', anchors: ['hoe neemt u', 'hoe gebruikt u', 'hoe moet u'] },
+    { number: 4, key: 'side_effects', anchors: ['bijwerkingen'] },
+    { number: 5, key: 'storage', anchors: ['hoe bewaart u', 'bewaart u'] },
+    { number: 6, key: 'composition', anchors: ['inhoud van de verpakking'] },
   ],
   fr: [
-    { key: 'what_is_it', pattern: /qu.?est-ce que .+ et dans quels cas est-il utilis/i },
-    { key: 'before_use', pattern: /informations? .+ avant (de prendre|d.utiliser)/i },
-    { key: 'how_to_use', pattern: /comment (prendre|utiliser) .+/i },
-    { key: 'side_effects', pattern: /effets? ind.sirables/i },
-    { key: 'storage', pattern: /comment conserver .+/i },
-    { key: 'composition', pattern: /contenu de l.emballage et autres informations/i },
+    { number: 1, key: 'what_is_it', anchors: ['qu est ce que', 'quest ce que'] },
+    { number: 2, key: 'before_use', anchors: ['informations'] },
+    { number: 3, key: 'how_to_use', anchors: ['comment prendre', 'comment utiliser'] },
+    { number: 4, key: 'side_effects', anchors: ['effets indesirables'] },
+    { number: 5, key: 'storage', anchors: ['comment conserver'] },
+    { number: 6, key: 'composition', anchors: ['contenu de l emballage'] },
   ],
 };
 
-interface HeadingHit {
+/** Lowercase, strip diacritics, and reduce punctuation to single spaces. */
+function normalize(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+const HEADING_LINE = /^\s*(\d{1,2})\s*[.)]\s*(.+)$/;
+
+interface Candidate {
   key: LeafletSectionKey;
   title: string;
-  start: number;
+  headingStart: number;
   bodyStart: number;
 }
 
 export function segmentLeaflet(text: string, language: SourceLanguage): RawSection[] {
+  const specs = SPECS[language];
   const lines = text.split(/\r?\n/);
-  const specs = HEADINGS[language];
-  const hits: HeadingHit[] = [];
+  const byKey = new Map<LeafletSectionKey, Candidate>();
 
   let offset = 0;
   for (const line of lines) {
     const lineStart = offset;
-    offset += line.length + 1; // +1 for the newline
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const spec = specs.find((s) => s.pattern.test(trimmed));
-    // Only treat as a heading if not already captured and it looks like a heading
-    // (short-ish line, optionally numbered "1." / "1)").
-    if (spec && !hits.some((h) => h.key === spec.key) && trimmed.length < 120) {
-      hits.push({ key: spec.key, title: trimmed.replace(/^\s*\d+[.)]\s*/, ''), start: lineStart, bodyStart: offset });
-    }
+    offset += line.length + 1; // +1 for the stripped newline
+    const m = HEADING_LINE.exec(line);
+    if (!m) continue;
+    const number = Number(m[1]);
+    const rest = m[2]!.trim();
+    const normRest = normalize(rest);
+    const spec = specs.find((s) => s.number === number && s.anchors.some((a) => normRest.includes(a)));
+    if (!spec) continue;
+    // Keep the last occurrence (real header beats the table of contents).
+    byKey.set(spec.key, { key: spec.key, title: rest.replace(/\s+/g, ' '), headingStart: lineStart, bodyStart: offset });
   }
 
-  hits.sort((a, b) => a.start - b.start);
-  return hits.map((hit, i) => {
-    const end = i + 1 < hits.length ? hits[i + 1]!.start : text.length;
+  const found = [...byKey.values()].sort((a, b) => a.headingStart - b.headingStart);
+  return found.map((hit, i) => {
+    const end = i + 1 < found.length ? found[i + 1]!.headingStart : text.length;
     return {
       key: hit.key,
       ordinal: i,

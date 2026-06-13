@@ -31,16 +31,67 @@ export async function fetchLeafletText(
   }
 }
 
-/** Extract text from a PDF buffer. pdfjs-dist is imported lazily so offline,
- *  fixture-only runs don't need it loaded. */
-async function extractPdfText(buf: Buffer): Promise<string> {
+/**
+ * Extract text from a PDF buffer. pdfjs-dist is imported lazily so offline,
+ * fixture-only runs don't need it loaded.
+ *
+ * FAMHP leaflets are justified/letter-spaced: pdfjs returns one item per glyph
+ * cluster, with real spaces as explicit " " items. We therefore concatenate the
+ * raw `str` values and insert a space/newline only from geometry (horizontal gap
+ * / vertical change), instead of forcing a space between every item — which would
+ * shatter words into "N O T I C E".
+ */
+export async function extractPdfText(buf: Buffer): Promise<string> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
   const pages: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
-    pages.push(content.items.map((it) => ('str' in it ? it.str : '')).join(' '));
+    pages.push(reconstructPageText(content.items));
   }
-  return pages.join('\n');
+  return normalizeWhitespace(pages.join('\n\n'));
+}
+
+interface TextItemLike {
+  str: string;
+  width?: number;
+  height?: number;
+  transform?: number[];
+  hasEOL?: boolean;
+}
+
+function reconstructPageText(items: unknown[]): string {
+  let out = '';
+  let prevEndX: number | null = null;
+  let prevY: number | null = null;
+
+  for (const raw of items) {
+    const it = raw as TextItemLike;
+    if (typeof it.str !== 'string') continue;
+    const x = it.transform?.[4] ?? 0;
+    const y = it.transform?.[5] ?? 0;
+    const w = it.width ?? 0;
+    const lineHeight = it.height ?? 10;
+
+    if (prevY !== null && Math.abs(y - prevY) > lineHeight * 0.5) {
+      out += '\n'; // new line
+    } else if (prevEndX !== null && it.str && x - prevEndX > 1.5 && !out.endsWith(' ')) {
+      out += ' '; // gap wide enough to be a missing space
+    }
+    out += it.str;
+    prevEndX = x + w;
+    prevY = y;
+    if (it.hasEOL) out += '\n';
+  }
+  return out;
+}
+
+/** Collapse runaway spaces and blank lines that survive reconstruction. */
+function normalizeWhitespace(text: string): string {
+  return text
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
