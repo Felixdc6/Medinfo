@@ -20,6 +20,13 @@ export async function reformatSection(
     'Do NOT add advice that is not in the source. Output only the rewritten text, no preamble.',
   ].join(' ');
 
-  const out = (await text.complete({ system, prompt: section.originalText, maxTokens: 1500 })).trim();
-  return out || section.originalText;
+  try {
+    const out = (await text.complete({ system, prompt: section.originalText, maxTokens: 1500 })).trim();
+    return out || section.originalText;
+  } catch (err) {
+    // If the text model is unreachable, keep the verbatim text so ingestion still
+    // completes (e.g. offline runs). Readability reformatting can be re-run later.
+    console.warn(`[reformat] falling back to original text: ${(err as Error).message}`);
+    return section.originalText;
+  }
 }

@@ -4,6 +4,7 @@ import { config } from './config.js';
 
 export const qdrant = new QdrantClient({
   url: config.qdrantUrl,
+  checkCompatibility: false,
   ...(config.qdrantApiKey ? { apiKey: config.qdrantApiKey } : {}),
 });
 
