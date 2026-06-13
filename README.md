@@ -89,8 +89,15 @@ live FAMHP leaflets (requires network access to the Belgian endpoints).
 - [x] **Phase 0** — Monorepo scaffold, shared domain model, provider interfaces, infra, disclaimer.
 - [x] **Phase 1** — Ingestion: SAM index + FAMHP leaflets → reformatted-and-linked sections → Postgres + Qdrant.
 - [x] **Phase 2** — API: `/identify`, `/medicines/search`, `/leaflet` (+on-demand translation), `/ask` (RAG), image deletion.
-- [ ] **Phase 3** — Mobile: camera, identify flow, leaflet viewer, search, ask, settings.
-- [ ] **Phase 4** — Compliance & polish: attribution, accessibility, offline cache, error states.
+- [x] **Phase 3** — Mobile: camera, identify flow, leaflet viewer (readable/original toggle, source link), search, ask, settings (language + delete photos).
+- [x] **Phase 4** — Compliance & polish: source attribution, accessibility labels, offline leaflet cache, error/retry states, test suite.
+
+## Testing
+
+```bash
+pnpm test        # Node test runner over backend pure logic (parser, segmentation, embeddings, shared)
+pnpm typecheck   # all packages
+```
 
 ## Sources
 
