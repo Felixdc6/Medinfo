@@ -1,19 +1,13 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
-import { createVlmProvider, createEmbeddingProvider } from '@medinfo/providers';
+import { embeddings, text, vlm } from './context.js';
 import { registerRoutes } from './routes/index.js';
 
 export async function buildServer() {
   const app = Fastify({ logger: true });
   await app.register(multipart, { limits: { fileSize: 15 * 1024 * 1024 } });
 
-  // Providers are constructed once and shared across requests.
-  const vlm = createVlmProvider();
-  const embeddings = createEmbeddingProvider();
-  app.log.info({ vlm: vlm.id, embeddings: embeddings.id }, 'providers initialised');
-
-  app.decorate('vlm', vlm);
-  app.decorate('embeddings', embeddings);
+  app.log.info({ vlm: vlm.id, embeddings: embeddings.id, text: text.id }, 'providers initialised');
 
   app.get('/health', async () => ({ status: 'ok' }));
   await registerRoutes(app);
@@ -30,12 +24,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.error(err);
       process.exit(1);
     });
-}
-
-// Type augmentation for decorated providers.
-declare module 'fastify' {
-  interface FastifyInstance {
-    vlm: import('@medinfo/providers').VlmProvider;
-    embeddings: import('@medinfo/providers').EmbeddingProvider;
-  }
 }
