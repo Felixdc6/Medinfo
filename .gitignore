@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+
+# Expo / RN
+.expo/
+*.log
+apps/mobile/ios/
+apps/mobile/android/
+
+# data / artifacts
+data/
+*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

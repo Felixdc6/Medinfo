@@ -1,0 +1,27 @@
+# Local development infrastructure.
+# Production uses managed free tiers: Qdrant Cloud (vectors) + a hosted Postgres
+# (e.g. Supabase). These containers mirror that locally so the API/ingestion code
+# is environment-agnostic.
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333" # REST
+      - "6334:6334" # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medinfo
+      POSTGRES_PASSWORD: medinfo
+      POSTGRES_DB: medinfo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  qdrant_data:
+  postgres_data:

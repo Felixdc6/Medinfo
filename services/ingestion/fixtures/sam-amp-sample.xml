@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Offline sample shaped after the SAM v2 "Actual Medicinal Products" (AMP) export.
+  Two products with NL/FR leaflet links. Used so the ingestion pipeline runs without
+  access to the live FAMHP/SAM endpoints. Replace by pointing SAM_AMP_PATH at the
+  real export.
+-->
+<ExportActualMedicines>
+  <Amp code="SAM000123">
+    <vmp code="0001">
+      <atc code="N02BE01"/>
+    </vmp>
+    <Data from="2020-01-01">
+      <officialName>Dafalgan 500 mg comprimés</officialName>
+      <abbreviatedName>Dafalgan</abbreviatedName>
+      <status>AUTHORIZED</status>
+      <prescriptionName>
+        <nl>Dafalgan 500 mg tabletten</nl>
+        <fr>Dafalgan 500 mg comprimés</fr>
+      </prescriptionName>
+    </Data>
+    <Ampp ctiExtended="SAM000123-01">
+      <Data from="2020-01-01">
+        <authorisationNr>BE123456</authorisationNr>
+        <officialName>Dafalgan 500 mg comprimés 30</officialName>
+        <status>AUTHORIZED</status>
+        <prescriptionType>FreeDelivery</prescriptionType>
+        <dmpp>
+          <deliveryEnvironment>P</deliveryEnvironment>
+          <code>1500035</code>
+          <codeType>CNK</codeType>
+        </dmpp>
+        <leafletLink>
+          <nl>https://medicinesdatabase.be/leaflets/dafalgan_500_nl.pdf</nl>
+          <fr>https://medicinesdatabase.be/leaflets/dafalgan_500_fr.pdf</fr>
+        </leafletLink>
+        <spcLink>
+          <nl>https://medicinesdatabase.be/spc/dafalgan_500_nl.pdf</nl>
+          <fr>https://medicinesdatabase.be/spc/dafalgan_500_fr.pdf</fr>
+        </spcLink>
+      </Data>
+    </Ampp>
+  </Amp>
+
+  <Amp code="SAM000999">
+    <vmp code="0042">
+      <atc code="M01AE01"/>
+    </vmp>
+    <Data from="2019-05-01">
+      <officialName>Brufen 400 mg comprimés pelliculés</officialName>
+      <abbreviatedName>Brufen</abbreviatedName>
+      <status>AUTHORIZED</status>
+      <prescriptionName>
+        <nl>Brufen 400 mg filmomhulde tabletten</nl>
+        <fr>Brufen 400 mg comprimés pelliculés</fr>
+      </prescriptionName>
+    </Data>
+    <Ampp ctiExtended="SAM000999-01">
+      <Data from="2019-05-01">
+        <authorisationNr>BE654321</authorisationNr>
+        <status>AUTHORIZED</status>
+        <prescriptionType>FreeDelivery</prescriptionType>
+        <dmpp>
+          <deliveryEnvironment>P</deliveryEnvironment>
+          <code>0123456</code>
+          <codeType>CNK</codeType>
+        </dmpp>
+        <leafletLink>
+          <nl>https://medicinesdatabase.be/leaflets/brufen_400_nl.pdf</nl>
+          <fr>https://medicinesdatabase.be/leaflets/brufen_400_fr.pdf</fr>
+        </leafletLink>
+      </Data>
+    </Ampp>
+  </Amp>
+</ExportActualMedicines>

@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Medinfo",
+    "slug": "medinfo",
+    "scheme": "medinfo",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Medinfo uses the camera to read the name on your medicine box so it can show you the leaflet."
+      }
+    },
+    "android": {
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Medinfo uses the camera to read the name on your medicine box so it can show you the leaflet."
+        }
+      ]
+    ]
+  }
+}
