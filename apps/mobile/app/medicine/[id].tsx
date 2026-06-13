@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { LeafletResponse, LeafletSectionKey } from '@medinfo/shared';
+import { SOURCES, type LeafletResponse, type LeafletSectionKey } from '@medinfo/shared';
 import { useLanguage } from '../../src/i18n/context';
 import { isRtl } from '../../src/i18n';
 import { getLeaflet } from '../../src/api/client';
 import { SectionCard } from '../../src/components/SectionCard';
+import { ErrorRetry } from '../../src/components/ErrorRetry';
 
 interface DisplaySection {
   key: LeafletSectionKey;
@@ -20,6 +21,7 @@ export default function MedicineScreen() {
   const { lang, t } = useLanguage();
   const [data, setData] = useState<LeafletResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -31,9 +33,9 @@ export default function MedicineScreen() {
     return () => {
       active = false;
     };
-  }, [id, lang]);
+  }, [id, lang, reload]);
 
-  if (error) return <Centered><Text style={styles.error}>{t.notFound}</Text></Centered>;
+  if (error) return <ErrorRetry message={t.notFound} onRetry={() => setReload((r) => r + 1)} />;
   if (!data) return <Centered><ActivityIndicator /></Centered>;
 
   const sections = buildSections(data);
@@ -48,16 +50,31 @@ export default function MedicineScreen() {
         <SectionCard key={s.key} title={s.title} readable={s.readable} original={s.original} rtl={isRtl(lang)} />
       ))}
 
-      <Pressable style={styles.ask} onPress={() => router.push(`/ask/${id}`)}>
+      <Pressable
+        style={styles.ask}
+        onPress={() => router.push(`/ask/${id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={t.ask}
+      >
         <Text style={styles.askText}>{t.ask}</Text>
       </Pressable>
 
-      <Pressable onPress={() => Linking.openURL(data.leaflet.originalSourceUrl)}>
+      <Pressable
+        onPress={() => Linking.openURL(data.leaflet.originalSourceUrl)}
+        accessibilityRole="link"
+        accessibilityLabel={t.viewSource}
+        hitSlop={8}
+      >
         <Text style={styles.source}>
           {t.viewSource}
           {data.leaflet.sourceLastUpdated ? ` · ${data.leaflet.sourceLastUpdated}` : ''}
         </Text>
       </Pressable>
+
+      {/* Regulatory attribution: name the official source of the leaflet data. */}
+      <Text style={styles.attrib}>
+        FAMHP — {SOURCES.famhpDatabase.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+      </Text>
     </ScrollView>
   );
 }
@@ -96,4 +113,5 @@ const styles = StyleSheet.create({
   ask: { backgroundColor: '#0a6', padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 4, marginBottom: 16 },
   askText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   source: { color: '#0a6', textAlign: 'center', textDecorationLine: 'underline', marginBottom: 8 },
+  attrib: { color: '#999', fontSize: 12, textAlign: 'center', marginTop: 4 },
 });

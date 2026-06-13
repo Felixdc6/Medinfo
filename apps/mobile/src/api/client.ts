@@ -6,6 +6,7 @@ import type {
   SupportedLanguage,
 } from '@medinfo/shared';
 import { getDeviceId } from './device';
+import { cacheLeaflet, readCachedLeaflet } from './cache';
 
 /** Base URL of the Medinfo API. Set EXPO_PUBLIC_API_URL for device/simulator. */
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -36,8 +37,17 @@ export function searchMedicines(query: string, lang: SupportedLanguage): Promise
   return json<SearchResponse>(`/medicines/search?q=${encodeURIComponent(query)}&lang=${lang}`);
 }
 
-export function getLeaflet(medicineId: string, lang: SupportedLanguage): Promise<LeafletResponse> {
-  return json<LeafletResponse>(`/medicines/${medicineId}/leaflet?lang=${lang}`);
+/** Fetch a leaflet; on success cache it, on network failure fall back to cache. */
+export async function getLeaflet(medicineId: string, lang: SupportedLanguage): Promise<LeafletResponse> {
+  try {
+    const data = await json<LeafletResponse>(`/medicines/${medicineId}/leaflet?lang=${lang}`);
+    await cacheLeaflet(medicineId, lang, data);
+    return data;
+  } catch (err) {
+    const cached = await readCachedLeaflet(medicineId, lang);
+    if (cached) return cached;
+    throw err;
+  }
 }
 
 export function askLeaflet(medicineId: string, question: string, lang: SupportedLanguage): Promise<AskResponse> {

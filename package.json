@@ -8,9 +8,13 @@
   "engines": {
     "node": ">=20"
   },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  },
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
+    "test": "node --import tsx --test \"packages/**/src/**/*.test.ts\" \"services/**/src/**/*.test.ts\"",
     "lint": "pnpm -r lint",
     "dev:api": "pnpm --filter @medinfo/api dev",
     "ingest": "pnpm --filter @medinfo/ingestion start",

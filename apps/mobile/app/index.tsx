@@ -8,13 +8,18 @@ export default function Home() {
   return (
     <View style={styles.root}>
       <Text style={styles.hint}>{t.scanHint}</Text>
-      <Pressable style={[styles.btn, styles.primary]} onPress={() => router.push('/camera')}>
+      <Pressable
+        style={[styles.btn, styles.primary]}
+        onPress={() => router.push('/camera')}
+        accessibilityRole="button"
+        accessibilityLabel={t.scan}
+      >
         <Text style={styles.primaryText}>{t.scan}</Text>
       </Pressable>
-      <Pressable style={styles.btn} onPress={() => router.push('/search')}>
+      <Pressable style={styles.btn} onPress={() => router.push('/search')} accessibilityRole="button" accessibilityLabel={t.search}>
         <Text style={styles.btnText}>{t.search}</Text>
       </Pressable>
-      <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
+      <Pressable style={styles.btn} onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel={t.settings}>
         <Text style={styles.btnText}>{t.settings}</Text>
       </Pressable>
     </View>
