@@ -67,10 +67,27 @@ pnpm dev:api                  # start the API
 pnpm dev:mobile               # start the Expo app
 ```
 
+### Run the ingestion offline (no model server, no network)
+
+The pipeline ships with a SAM sample and a leaflet fixture, plus a deterministic
+hash-embedding provider, so it runs end-to-end with only Postgres + Qdrant:
+
+```bash
+pnpm infra:up
+EMBEDDING_PROVIDER=hash \
+LEAFLET_FIXTURE_DIR=services/ingestion/fixtures/leaflets \
+REFORMAT_PROVIDER=qwen \
+  pnpm ingest                 # migrate -> medicines -> leaflets
+```
+
+Point `SAM_AMP_PATH` at the real SAM export and drop `LEAFLET_FIXTURE_DIR` to ingest
+live FAMHP leaflets (requires network access to the Belgian endpoints).
+`pnpm ingest <step>` runs a single step: `migrate` | `medicines` | `leaflets`.
+
 ## Roadmap
 
 - [x] **Phase 0** — Monorepo scaffold, shared domain model, provider interfaces, infra, disclaimer.
-- [ ] **Phase 1** — Ingestion: SAM index + FAMHP leaflets → reformatted sections → Postgres + Qdrant.
+- [x] **Phase 1** — Ingestion: SAM index + FAMHP leaflets → reformatted-and-linked sections → Postgres + Qdrant.
 - [ ] **Phase 2** — API: `/identify`, `/medicines/search`, `/leaflet`, `/ask`, image deletion.
 - [ ] **Phase 3** — Mobile: camera, identify flow, leaflet viewer, search, ask, settings.
 - [ ] **Phase 4** — Compliance & polish: attribution, accessibility, offline cache, error states.

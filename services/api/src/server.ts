@@ -1,8 +1,7 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
+import { createVlmProvider, createEmbeddingProvider } from '@medinfo/providers';
 import { registerRoutes } from './routes/index.js';
-import { createVlmProvider } from './providers/vlm/index.js';
-import { createEmbeddingProvider } from './providers/embedding/index.js';
 
 export async function buildServer() {
   const app = Fastify({ logger: true });
@@ -36,7 +35,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 // Type augmentation for decorated providers.
 declare module 'fastify' {
   interface FastifyInstance {
-    vlm: import('./providers/vlm/index.js').VlmProvider;
-    embeddings: import('./providers/embedding/index.js').EmbeddingProvider;
+    vlm: import('@medinfo/providers').VlmProvider;
+    embeddings: import('@medinfo/providers').EmbeddingProvider;
   }
 }
